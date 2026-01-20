@@ -1,0 +1,76 @@
+name: Build and Release n8n Core
+
+on:
+  workflow_dispatch:
+    inputs:
+      n8n_version:
+        description: '要构建的 n8n 版本 (例如: latest 或 1.25.0)'
+        required: true
+        default: 'latest'
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact_name: n8n-core-windows.zip
+          - os: macos-latest
+            artifact_name: n8n-core-macos.zip
+          - os: ubuntu-latest
+            artifact_name: n8n-core-linux.zip
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Package
+        shell: bash
+        run: |
+          mkdir build_dir && cd build_dir
+          npm init -y
+          npm install n8n@${{ github.event.inputs.n8n_version }} --production
+          
+          # 清理瘦身
+          find node_modules -type f -name "*.md" -delete || true
+          
+          # 根据不同平台执行压缩
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            # Windows 环境下也可以使用 7z 或直接用 shell 逻辑
+            zip -r ../${{ matrix.artifact_name }} node_modules package.json
+          else
+            zip -r ../${{ matrix.artifact_name }} node_modules package.json
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_name }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.n8n_version }}-${{ github.run_number }}
+          name: Release n8n ${{ github.event.inputs.n8n_version }}
+          files: |
+            n8n-core-windows.zip/n8n-core-windows.zip
+            n8n-core-macos.zip/n8n-core-macos.zip
+            n8n-core-linux.zip/n8n-core-linux.zip
