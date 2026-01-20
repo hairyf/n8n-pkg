@@ -8,7 +8,6 @@ on:
         required: true
         default: 'latest'
 
-# 核心修正 1：赋予 Actions 写入 Release 的权限
 permissions:
   contents: write
 
@@ -37,20 +36,14 @@ jobs:
           node-version: 20
 
       - name: Build Package
-        # 核心修正 2：Windows 下使用 bash 环境统一清理命令
         shell: bash
         run: |
           mkdir build_dir && cd build_dir
           npm init -y
           npm install n8n@${{ github.event.inputs.n8n_version }} --production
           
-          # 统一瘦身逻辑
-          find node_modules -type f \( -name "*.md" -o -name "*.map" -o -name "README" \) -delete || true
-          find node_modules -type d \( -name "test" -o -name "tests" -o -name "example" \) -exec rm -rf {} + || true
-          
           # 根据不同平台使用对应的压缩命令
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            # Windows Actions 环境自带 7z，比 zip 指令更稳
             7z a ../${{ matrix.artifact_name }} node_modules package.json
           else
             zip -r ../${{ matrix.artifact_name }} node_modules package.json
@@ -72,12 +65,44 @@ jobs:
           path: ./artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2  # 使用更稳定的 v2 版本
+        uses: softprops/action-gh-release@v2
         with:
-          # 核心修正 3：使用 run_id 确保 tag 唯一性，防止发布失败
           tag_name: n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}
-          name: Release n8n ${{ github.event.inputs.n8n_version }}
-          body: "Auto-generated n8n core packages for desktop."
+          name: Release-n8n-${{ github.event.inputs.n8n_version }}
+          body: |
+            # n8n Core Desktop Packages - Version ${{ github.event.inputs.n8n_version }}
+            
+            ## 🚀 CDN 下载链接 (jsDelivr)
+            
+            ### Windows
+            ```
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-windows.zip
+            ```
+            
+            ### macOS
+            ```
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-macos.zip
+            ```
+            
+            ### Linux
+            ```
+            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-linux.zip
+            ```
+            
+            ## 📦 直接下载 (GitHub)
+            
+            ### Windows
+            [n8n-core-windows.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-windows.zip)
+            
+            ### macOS
+            [n8n-core-macos.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-macos.zip)
+            
+            ### Linux
+            [n8n-core-linux.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-linux.zip)
+            
+            ---
+            
+            *构建时间：${{ github.run_number }} | 运行ID：${{ github.run_id }}*
           draft: false
           prerelease: false
           files: |
