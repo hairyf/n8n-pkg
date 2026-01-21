@@ -59,7 +59,7 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_name }}
 
-release:
+  release:
     needs: build
     runs-on: ubuntu-latest
     steps:
