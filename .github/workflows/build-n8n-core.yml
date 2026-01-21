@@ -59,7 +59,7 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_name }}
 
-  release:
+release:
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -74,39 +74,8 @@ jobs:
           tag_name: n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}
           name: Release-n8n-${{ github.event.inputs.n8n_version }}
           body: |
-            # n8n Core Desktop Packages - Version ${{ github.event.inputs.n8n_version }}
-            
-            ## 🚀 CDN 下载链接 (jsDelivr)
-            
-            ### Windows
-            ```
-            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-windows.zip
-            ```
-            
-            ### macOS
-            ```
-            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-macos.zip
-            ```
-            
-            ### Linux
-            ```
-            https://cdn.jsdelivr.net/gh/${{ github.repository }}@n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-linux.zip
-            ```
-            
-            ## 📦 直接下载 (GitHub)
-            
-            ### Windows
-            [n8n-core-windows.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-windows.zip)
-            
-            ### macOS
-            [n8n-core-macos.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-macos.zip)
-            
-            ### Linux
-            [n8n-core-linux.zip](https://github.com/${{ github.repository }}/releases/download/n8n-${{ github.event.inputs.n8n_version }}-${{ github.run_id }}/n8n-core-linux.zip)
-            
-            ---
-            
-            *构建时间：${{ github.run_number }} | 运行ID：${{ github.run_id }}*
+            # n8n Core Desktop Packages
+              n8n version: ${{ github.event.inputs.n8n_version }}
           draft: false
           prerelease: false
           files: |
