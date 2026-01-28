@@ -1,0 +1,14 @@
+diff --git a/dist/nodes-loader/load-class-in-isolation.js b/dist/nodes-loader/load-class-in-isolation.js
+index 959aa6a0a311ac378d851cf2deef0bde3faf7757..913ede601b211830fdf40ad629b8124363a25e04 100644
+--- a/dist/nodes-loader/load-class-in-isolation.js
++++ b/dist/nodes-loader/load-class-in-isolation.js
+@@ -12,7 +12,8 @@ const loadClassInIsolation = (filePath, className) => {
+         return new (require(filePath)[className])();
+     }
+     else {
+-        const script = new vm_1.Script(`new (require('${filePath}').${className})()`);
++        const escapedPath = filePath.replace(/'/g, "\\'");
++        const script = new vm_1.Script(`new (require('${escapedPath}').${className})()`);
+         return script.runInContext(context);
+     }
+ };

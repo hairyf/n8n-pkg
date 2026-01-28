@@ -17,14 +17,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
         include:
           - os: windows-latest
-            artifact_name: n8n-core-windows.zip
-          - os: macos-latest
-            artifact_name: n8n-core-macos.zip
+            artifact_name: n8n-pkg-windows.zip
+          - os: macos-14
+            artifact_name: n8n-pkg-macos-arm64.zip
+          - os: macos-13
+            artifact_name: n8n-pkg-macos-x64.zip
           - os: ubuntu-latest
-            artifact_name: n8n-core-linux.zip
+            artifact_name: n8n-pkg-linux.zip
 
     steps:
       - name: Checkout code
@@ -35,22 +36,37 @@ jobs:
         with:
           node-version: 20
 
-      - name: Build Package
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
         shell: bash
         run: |
-          mkdir build_dir && cd build_dir
-          npm init -y
-          npm install n8n@${{ github.event.inputs.n8n_version }} --production
+          pnpm install --frozen-lockfile
 
-          # 统一瘦身逻辑
-          find node_modules -type f \( -name "*.md" -o -name "*.map" -o -name "README" \) -delete || true
-          find node_modules -type d \( -name "test" -o -name "tests" -o -name "example" \) -exec rm -rf {} + || true
-          
+      - name: Deploy package
+        shell: bash
+        run: |
+          pnpm deploy --filter . --prod build_dir --legacy
+          cd build_dir
+          npm install --omit=dev
+
+      - name: Cleanup unnecessary files
+        shell: bash
+        working-directory: build_dir
+        run: |
+          # 统一瘦身逻辑 (跨平台支持)
+          find node_modules -type f \( -name "*.md" -o -name "*.map" -o -name "README*" -o -name "LICENSE*" -o -name "*.ts" -o -name "*.mts"  \) -delete || true
+          find node_modules -type d \( -name "test" -o -name "tests" -o -name "benchmark" -o -name "example" -o -name "demo" \) -exec rm -rf {} + || true
+      - name: Create archive
+        shell: bash
+        working-directory: build_dir
+        run: |
           # 根据不同平台使用对应的压缩命令
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            7z a ../${{ matrix.artifact_name }} node_modules package.json
+            7z a ../${{ matrix.artifact_name }} node_modules package.json package-lock.json patches
           else
-            zip -r ../${{ matrix.artifact_name }} node_modules package.json
+            zip -r ../${{ matrix.artifact_name }} node_modules package.json package-lock.json patches
           fi
 
       - name: Upload Artifact
@@ -75,10 +91,10 @@ jobs:
           name: Release-n8n-${{ github.event.inputs.n8n_version }}
           body: |
             # n8n Core Desktop Packages
-              n8n version: ${{ github.event.inputs.n8n_version }}
+            - Version: ${{ github.event.inputs.n8n_version }}
+            - Build ID: ${{ github.run_id }}
           draft: false
           prerelease: false
+          # 自动匹配下载目录下的 zip 文件
           files: |
-            ./artifacts/n8n-core-windows.zip/n8n-core-windows.zip
-            ./artifacts/n8n-core-macos.zip/n8n-core-macos.zip
-            ./artifacts/n8n-core-linux.zip/n8n-core-linux.zip
+            ./artifacts/**/*.zip

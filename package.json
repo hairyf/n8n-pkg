@@ -1,0 +1,15 @@
+{
+  "name": "n8n-pkg",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.26.2",
+  "dependencies": {
+    "n8n": "^2.4.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "ws": "^8.18.0",
+      "@langchain/core": "1.1.15",
+      "@sentry/node": "^8.0.0"
+    }
+  }
+}

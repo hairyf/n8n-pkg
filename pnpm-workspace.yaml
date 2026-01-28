@@ -1,0 +1,14 @@
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@scarf/scarf'
+  - '@sentry-internal/node-native-stacktrace'
+  - cpu-features
+  - oracledb
+  - msgpackr-extract
+  - protobufjs
+  - sqlite3
+  - ssh2
+
+patchedDependencies:
+  n8n-core: patches/n8n-core.patch
+  n8n-editor-ui: patches/n8n-editor-ui.patch

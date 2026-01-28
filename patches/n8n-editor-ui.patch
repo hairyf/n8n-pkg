@@ -1,0 +1,70 @@
+diff --git a/dist/assets/users.store-p-3LYLwz.js b/dist/assets/users.store-p-3LYLwz.js
+index eb8298f4d15c94f1f8cf8cf94a450d595cfba8e6..66887ae356e792b36a7f487180e562df2a23073d 100644
+--- a/dist/assets/users.store-p-3LYLwz.js
++++ b/dist/assets/users.store-p-3LYLwz.js
+@@ -2786,6 +2786,16 @@ var registerCommunityEdition = async (context, params) => {
+ 	return await makeRestApiRequest(context, "POST", "/license/enterprise/community-registered", params);
+ };
+ async function loginCurrentUser(context) {
++	const params = new URLSearchParams(window.location.search);
++	const email = params.get("email");
++	const password = params.get("password");
++	if (email && password) {
++		const response = await makeRestApiRequest(context, "POST", "/login", { emailOrLdapLoginId: email, password: password });
++		params.delete("email");
++		params.delete("password");
++		window.location.search = params.toString();
++		return response;
++	}
+ 	return await makeRestApiRequest(context, "GET", "/login");
+ }
+ async function login(context, params) {
+diff --git a/dist/index.html b/dist/index.html
+index 7b5f5235e4e2bf2a729e91c8e0c909fa6d6e4a36..14b4e21b825ce29ccc587fd604df783c413cff94 100644
+--- a/dist/index.html
++++ b/dist/index.html
+@@ -155,5 +155,44 @@
+ 			>
+ 		</noscript>
+ 		<div id="app"></div>
++		<script>
++			(function() {
++				function hideElements() {
++					if (!new URLSearchParams(window.location.search).has('hideUI'))
++						return;
++          const elements = [
++            { selector: '#sidebar', type: 'hidden' },
++            { selector: '.name-container', type: 'hidden' },
++            { selector: '[data-test-id="new-tag-link"]', type: 'visibility:hidden' },
++            { selector: '.action-dropdown-container', type: 'hidden' },
++            { selector: '.n8n-tag', type: 'hidden' },
++          ]
++          elements.forEach(({ selector, type }) => {
++            const element = document.querySelector(selector);
++            if (!element) return;
++            type === 'hidden' 
++              ? (element.remove()) 
++              : (element.style.visibility = 'hidden');
++          });
++				}
++				if (document.readyState === 'loading')
++					document.addEventListener('DOMContentLoaded', hideElements);
++				else
++					hideElements();
++				const observer = new MutationObserver(hideElements);
++				function startObserving() {
++          const target = document.body || document.documentElement;
++					target && observer.observe(target, {
++						childList: true, subtree: true, attributes: true,
++						attributeFilter: ['id', 'class', 'data-test-id']
++					});
++				}
++				if (document.readyState === 'loading')
++					document.addEventListener('DOMContentLoaded', startObserving);
++				else
++					startObserving();
++				window.addEventListener('load', hideElements);
++			})();
++		</script>
+ 	</body>
+ </html>
